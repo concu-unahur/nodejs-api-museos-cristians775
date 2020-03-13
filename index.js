@@ -14,17 +14,42 @@ function imprimirMuseos(error, respuesta) {
 
 console.log("Antes de llamar a superagent");
 
-superagent
-  .get("https://www.cultura.gob.ar/api/v2.0/museos")
-  .query({ format: "json" })
-  .end((err, res) => {
-    const nombres = res.body.results.map(e =>`${e.nombre}. Por cualquier consulta comunicarse al ${e.telefono}`);
-   console.log(nombres)
-    fs.writeFile('museos.txt',nombres.join('\n'),(e)=>{});
-   
+const getMuseos = next => {
+  superagent
+    .get("https://www.cultura.gob.ar/api/v2.0/museos")
+    .query({ format: "json" })
+    .end((err, res) => {
+      const nombres = res.body.results.map(
+        e => `${e.nombre}. Por cualquier consulta comunicarse al ${e.telefono}`
+      );
+      next(nombres);
+    });
+};
+const getOrganismos = next => {
+  superagent
+    .get("https://www.cultura.gob.ar/api/v2.0/organismos")
+    .query({ format: "json" })
+    .end((err, res) => {
+      const nombres = res.body.results.map(
+        e => `${e.nombre}. Por cualquier consulta comunicarse al ${e.telefono}`
+      );
+
+      next(nombres);
+    });
+};
+
+const escribirTxt = () => {
+  getMuseos(res => {
+    getOrganismos(res2 => {
+      fs.writeFile(
+        "museos-organismos.txt",
+        res.concat(res2).join("\n"),
+        e => {}
+      );
+    });
   });
+};
+
+escribirTxt();
 
 console.log("Después de llamar a superagent");
-
-
-
